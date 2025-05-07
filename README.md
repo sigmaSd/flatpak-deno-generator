@@ -4,7 +4,7 @@
 deno -RN -W=. jsr:@sigmasd/flaptak-deno-generator deno.lock
 ```
 
-This will create a deno-sources.json that can be used in flatpak build files:
+This will create a `deno-sources.json` that can be used in flatpak build files:
 
 - it creates and populates `./deno_dir` with npm dependencies
 - it creates and populates `./vendor` with jsr dependencies
