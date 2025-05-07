@@ -172,14 +172,17 @@ if (import.meta.main) {
   }
 
   const lock = JSON.parse(Deno.readTextFileSync(arg));
+  if (lock.version !== "5") {
+    throw new Error(`Unsupported deno lock version: ${lock.version}`);
+  }
 
-  const jsrPkgs: Pkg[] = Object.keys(lock.jsr).map((pkg) => {
+  const jsrPkgs: Pkg[] = !lock.jsr ? [] : Object.keys(lock.jsr).map((pkg) => {
     const r = splitOnce(pkg, "@", "right");
     const name = r[0].split("/")[1];
     return { module: r[0], version: r[1], name };
   });
   jsrPkgs;
-  const npmPkgs: Pkg[] = Object.entries(lock.npm)
+  const npmPkgs: Pkg[] = !lock.npm ? [] : Object.entries(lock.npm)
     .filter((
       // deno-lint-ignore no-explicit-any
       [_key, val]: any,

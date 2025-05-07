@@ -1,0 +1,6 @@
+{
+  "name": "@sigmasd/flatpak-deno-generator",
+  "version": "1.0.0",
+  "exports": "./main.ts",
+  "license": "MIT"
+}
