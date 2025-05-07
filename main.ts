@@ -8,6 +8,10 @@ interface Pkg {
   cpu?: "x86_64" | "aarch64";
 }
 
+// NOTE: This was used to put jsr deps inside deno_dir as well, but unfortntly
+// even when hashed correctly and put in the correct place, it seems deno requrie
+// some metadata checks that we can't get declerativly aka without modifying the files
+// thats why we workaround this by using vendor
 /**
  * Converts a URL into a hashed filename suitable for the Deno cache.
  * Handles characters not allowed in filenames and uses SHA-256 hashing
@@ -17,7 +21,7 @@ interface Pkg {
  * @returns A promise that resolves with the hashed filename path string.
  * @throws {Error} If the URL is invalid, the scheme is not supported for caching, or hashing fails.
  */
-export function urlToDenoCacheFilename(urlString: string): Promise<string> {
+function _urlToDenoCacheFilename(urlString: string): Promise<string> {
   let url: URL;
   try {
     url = new URL(urlString);
@@ -161,7 +165,7 @@ async function npmPkgToFlatpakData(pkg: Pkg) {
 }
 
 if (import.meta.main) {
-  const arg = Deno.args[0] || "deno.lock";
+  const arg = Deno.args[0];
   if (!arg) {
     console.error("No argument provided");
     Deno.exit(1);
@@ -204,5 +208,8 @@ if (import.meta.main) {
     ),
   ].flat();
   // console.log(flatpakData);
-  Deno.writeTextFileSync("sources.json", JSON.stringify(flatpakData, null, 2));
+  Deno.writeTextFileSync(
+    "deno-sources.json",
+    JSON.stringify(flatpakData, null, 2),
+  );
 }
