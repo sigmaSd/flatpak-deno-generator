@@ -1,7 +1,7 @@
 # Flatpak Deno Generator
 
 ```
-deno -RN jsr:@sigmasd/flaptak-deno-generator deno.lock
+deno -RN -W=. jsr:@sigmasd/flaptak-deno-generator deno.lock
 ```
 
 This will create a deno-sources.json that can be used in flatpak build files:
