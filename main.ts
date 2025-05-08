@@ -75,6 +75,51 @@ function splitOnce(
   return [str.slice(0, idx), str.slice(idx + separator.length)];
 }
 
+// https://github.com/denoland/deno_cache_dir/blob/0b2dbb2553019dd829d71665bed7f48f610b64f0/rs_lib/src/local.rs#L651
+function shouldHash(fileName: string): boolean {
+  return fileName.length === 0 || fileName.length > 30;
+}
+
+const FORBIDDEN_CHARS = new Set([
+  "?",
+  "<",
+  ">",
+  ":",
+  "*",
+  "|",
+  "\\",
+  ":",
+  '"',
+  "'",
+  "/",
+]);
+
+async function shortHash(fileName: string): Promise<string> {
+  const hash = await sha256(fileName);
+  const MAX_LENGTH = 20;
+  let sub = "";
+  let count = 0;
+  for (const c of fileName) {
+    if (count >= MAX_LENGTH) break;
+    if (c === "?") break;
+    if (FORBIDDEN_CHARS.has(c)) {
+      sub += "_";
+    } else {
+      sub += c.toLowerCase();
+    }
+    count++;
+  }
+
+  let ext = splitOnce(fileName, ".", "right").at(1);
+  ext = ext ? `.${ext}` : "";
+
+  if (sub.length === 0) {
+    return `#${hash.slice(0, 7)}${ext}`;
+  } else {
+    return `#${sub}_${hash.slice(0, 5)}${ext}`;
+  }
+}
+
 async function jsrPkgToFlatpakData(pkg: Pkg) {
   const flatpkData = [];
   const metaUrl = `https://jsr.io/${pkg.module}/meta.json`;
@@ -114,8 +159,12 @@ async function jsrPkgToFlatpakData(pkg: Pkg) {
     const [checksumType, checksumValue] = splitOnce(fileMeta.checksum, "-");
 
     const url = `https://jsr.io/${pkg.module}/${pkg.version}${fileUrl}`;
-    const [fileDir, fileName] = splitOnce(fileUrl, "/", "right");
+    let [fileDir, fileName] = splitOnce(fileUrl, "/", "right");
     const dest = `vendor/jsr.io/${pkg.module}/${pkg.version}${fileDir}`;
+
+    if (shouldHash(fileName)) {
+      fileName = await shortHash(fileName);
+    }
 
     flatpkData.push({
       type: "file",
