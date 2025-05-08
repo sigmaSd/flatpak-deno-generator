@@ -171,15 +171,18 @@ if (import.meta.main) {
   npmPkgs;
   const httpPkgsData = !lock.remote
     ? []
-    : Object.entries(lock.remote).map(([urlStr, checksum]) => {
+    : Object.entries(lock.remote).map(async ([urlStr, checksum]) => {
       const url = new URL(urlStr);
-      const segments = urlSegments(url);
+      const segments = await Promise.all(
+        urlSegments(url)
+          .map(async (part) => shouldHash(part) ? await shortHash(part) : part),
+      );
       const filename = segments.pop();
       return {
         type: "file",
         url: urlStr,
         sha256: checksum,
-        dest: `vendor/${url.hostname}/${segments}`,
+        dest: `vendor/${url.hostname}/${segments.join("/")}`,
         "dest-filename": filename,
       };
     });
@@ -191,7 +194,7 @@ if (import.meta.main) {
     await Promise.all(npmPkgs.map((pkg) => npmPkgToFlatpakData(pkg))).then(
       (r) => r.flat(),
     ),
-    httpPkgsData,
+    await Promise.all(httpPkgsData),
   ].flat();
   // console.log(flatpakData);
   Deno.writeTextFileSync(

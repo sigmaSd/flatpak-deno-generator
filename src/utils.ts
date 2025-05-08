@@ -69,11 +69,6 @@ export function splitOnce(
   return [str.slice(0, idx), str.slice(idx + separator.length)];
 }
 
-// https://github.com/denoland/deno_cache_dir/blob/0b2dbb2553019dd829d71665bed7f48f610b64f0/rs_lib/src/local.rs#L651
-export function shouldHash(fileName: string): boolean {
-  return fileName.length === 0 || fileName.length > 30;
-}
-
 const FORBIDDEN_CHARS = new Set([
   "?",
   "<",
@@ -88,6 +83,27 @@ const FORBIDDEN_CHARS = new Set([
   "/",
 ]);
 
+// https://github.com/denoland/deno_cache_dir/blob/0b2dbb2553019dd829d71665bed7f48f610b64f0/rs_lib/src/local.rs#L594
+export function hasForbiddenChars(segment: string): boolean {
+  for (const c of segment) {
+    const isUppercase = /[A-Z]/.test(c);
+    if (FORBIDDEN_CHARS.has(c) || isUppercase) {
+      // do not allow uppercase letters in order to make this work
+      // the same on case insensitive file systems
+      return true;
+    }
+  }
+  return false;
+}
+
+// https://github.com/denoland/deno_cache_dir/blob/0b2dbb2553019dd829d71665bed7f48f610b64f0/rs_lib/src/local.rs#L651
+export function shouldHash(fileName: string): boolean {
+  return fileName.length === 0 ||
+    fileName.length > 30 ||
+    hasForbiddenChars(fileName);
+}
+
+// https://github.com/denoland/deno_cache_dir/blob/0b2dbb2553019dd829d71665bed7f48f610b64f0/rs_lib/src/local.rs#L621
 export async function shortHash(fileName: string): Promise<string> {
   const hash = await sha256(fileName);
   const MAX_LENGTH = 20;
@@ -104,7 +120,9 @@ export async function shortHash(fileName: string): Promise<string> {
     count++;
   }
 
-  let ext = splitOnce(fileName, ".", "right").at(1);
+  const parts = splitOnce(sub, ".", "right");
+  sub = parts[0];
+  let ext = parts.at(1);
   ext = ext ? `.${ext}` : "";
 
   if (sub.length === 0) {
