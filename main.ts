@@ -108,14 +108,13 @@ async function jsrPkgToFlatpakData(pkg: Pkg) {
   for (
     const fileUrl of Object.keys(metaVer.moduleGraph2 || metaVer.moduleGraph1)
   ) {
-    const checksum = metaVer.manifest[fileUrl];
+    const fileMeta = metaVer.manifest[fileUrl];
     // this mean the url exists in the module graph but not in the manifest -> this url is not needed
-    if (!checksum) continue;
-    const [checksumType, checksumValue] = splitOnce(checksum.checksum, "-");
+    if (!fileMeta) continue;
+    const [checksumType, checksumValue] = splitOnce(fileMeta.checksum, "-");
 
     const url = `https://jsr.io/${pkg.module}/${pkg.version}${fileUrl}`;
     const [fileDir, fileName] = splitOnce(fileUrl, "/", "right");
-    // deno-ignore-fmt
     const dest = `vendor/jsr.io/${pkg.module}/${pkg.version}${fileDir}`;
 
     flatpkData.push({
@@ -126,6 +125,30 @@ async function jsrPkgToFlatpakData(pkg: Pkg) {
       "dest-filename": fileName,
     });
   }
+
+  // If a moule imports deno.json (import ... from "deno.json" with {type:"json"}), it won't appear in the module graph
+  // Worarkound: if there is a deno.json file in the manifest just add it
+  // Note this can be made better, by looking in the moduleGraph if deno.json is specified in the dependencies
+  for (const [fileUrl, fileMeta] of Object.entries(metaVer.manifest)) {
+    if (fileUrl.includes("deno.json")) {
+      const [checksumType, checksumValue] = splitOnce(
+        // deno-lint-ignore no-explicit-any
+        (fileMeta as any).checksum,
+        "-",
+      );
+      const url = `https://jsr.io/${pkg.module}/${pkg.version}${fileUrl}`;
+      const [fileDir, fileName] = splitOnce(fileUrl, "/", "right");
+      const dest = `vendor/jsr.io/${pkg.module}/${pkg.version}${fileDir}`;
+      flatpkData.push({
+        type: "file",
+        url,
+        [checksumType]: checksumValue,
+        dest,
+        "dest-filename": fileName,
+      });
+    }
+  }
+
   return flatpkData;
 }
 
