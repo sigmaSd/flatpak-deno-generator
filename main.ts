@@ -105,7 +105,9 @@ async function jsrPkgToFlatpakData(pkg: Pkg) {
 
   const metaVer = JSON.parse(metaVerText);
 
-  for (const fileUrl of Object.keys(metaVer.moduleGraph2)) {
+  for (
+    const fileUrl of Object.keys(metaVer.moduleGraph2 || metaVer.moduleGraph1)
+  ) {
     const checksum = metaVer.manifest[fileUrl];
     // this mean the url exists in the module graph but not in the manifest -> this url is not needed
     if (!checksum) continue;
