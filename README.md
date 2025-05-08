@@ -37,3 +37,6 @@ sources:
 - DENORT_BIN=$PWD/denort ./deno compile --vendor --no-check --output virtaudio-bin --cached-only
   --allow-all --include ./src/gui.slint --include ./src/client.html ./src/gui.ts
 ```
+
+## Example
+- checkout https://github.com/flathub/io.github.sigmasd.VirtAudio/
