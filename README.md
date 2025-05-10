@@ -1,3 +1,5 @@
+This tool lives now upstream https://jsr.io/@sigmasd/flatpak-deno-generator/settings
+
 # Flatpak Deno Generator
 
 ```
